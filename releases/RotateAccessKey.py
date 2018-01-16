@@ -5,15 +5,15 @@ import json
 import ast
 from yattag import Doc
 
-BUILD_VERSION = '@@buildversion'
-AWS_REGION = '@@deploymentregion'
-SERVICE_ACCOUNT_NAME = '@@serviceaccount'
-EMAIL_TO_ADMIN = '@@emailreportto'
-EMAIL_FROM = '@@emailreportfrom'
-EMAIL_SEND_COMPLETION_REPORT = ast.literal_eval('@@emailsendcompletionreport')
+BUILD_VERSION = '1.0.1'
+AWS_REGION = 'us-east-1'
+SERVICE_ACCOUNT_NAME = 'IAM_USERNAME_TO_EXCLUDE_IF_ANY'
+EMAIL_TO_ADMIN = 'helpdesk@vrl.com.au'
+EMAIL_FROM = 'helpdesk@vrl.com.au'
+EMAIL_SEND_COMPLETION_REPORT = ast.literal_eval('True')
 
 # Length of mask over the IAM Access Key
-MASK_ACCESS_KEY_LENGTH = ast.literal_eval('@@maskaccesskeylength')
+MASK_ACCESS_KEY_LENGTH = ast.literal_eval('16')
 CHARSET = "UTF-8"
 
 # Users
@@ -25,17 +25,17 @@ USER_LIST_INACTIVE = []
 ALL_USERS = {}
 
 # First email warning
-FIRST_WARNING_NUM_DAYS = @@first_warning_num_days
-FIRST_WARNING_MESSAGE = '@@first_warning_message'
+FIRST_WARNING_NUM_DAYS = 83
+FIRST_WARNING_MESSAGE = 'key is due to expire in 1 week (7 days)'
 # Last email warning
-LAST_WARNING_NUM_DAYS = @@last_warning_num_days
-LAST_WARNING_MESSAGE = '@@last_warning_message'
+LAST_WARNING_NUM_DAYS = 89
+LAST_WARNING_MESSAGE = 'key is due to expire in 1 day (tomorrow)'
 
 # Max AGE days of key after which it is considered EXPIRED (deactivated)
-KEY_MAX_AGE_IN_DAYS = @@key_max_age_in_days
-KEY_EXPIRED_MESSAGE = '@@key_expired_message'
+KEY_MAX_AGE_IN_DAYS = 90
+KEY_EXPIRED_MESSAGE = 'key is now EXPIRED! Changing key to INACTIVE state'
 
-KEY_YOUNG_MESSAGE = '@@key_young_message'
+KEY_YOUNG_MESSAGE = 'key is still young'
 
 # ==========================================================
 
@@ -256,6 +256,7 @@ def lambda_handler(event, context):
     print '*****************************'
     return deactivated_report1
 
+lambda_handler(0, 0)
 #if __name__ == "__main__":
 #    event = 1
 #    context = 1

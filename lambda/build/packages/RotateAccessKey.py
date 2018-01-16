@@ -5,15 +5,15 @@ import json
 import ast
 from yattag import Doc
 
-BUILD_VERSION = '@@buildversion'
-AWS_REGION = '@@deploymentregion'
-SERVICE_ACCOUNT_NAME = '@@serviceaccount'
-EMAIL_TO_ADMIN = '@@emailreportto'
-EMAIL_FROM = '@@emailreportfrom'
-EMAIL_SEND_COMPLETION_REPORT = ast.literal_eval('@@emailsendcompletionreport')
+BUILD_VERSION = '1.0.1'
+AWS_REGION = 'us-west-2'
+SERVICE_ACCOUNT_NAME = 'IAM_USERNAME_TO_EXCLUDE_IF_ANY'
+EMAIL_TO_ADMIN = 'khushal08@yahoo.com'
+EMAIL_FROM = 'khushal08@yahoo.com'
+EMAIL_SEND_COMPLETION_REPORT = ast.literal_eval('True')
 
 # Length of mask over the IAM Access Key
-MASK_ACCESS_KEY_LENGTH = ast.literal_eval('@@maskaccesskeylength')
+MASK_ACCESS_KEY_LENGTH = ast.literal_eval('16')
 CHARSET = "UTF-8"
 
 # Users
@@ -21,21 +21,20 @@ USER_LIST_FIRST_WARNING = []
 USER_LIST_LAST_WARNING = []
 USER_LIST_YOUNG_MSG = []
 USER_LIST_EXPIRED = []
-USER_LIST_INACTIVE = []
 ALL_USERS = {}
 
 # First email warning
-FIRST_WARNING_NUM_DAYS = @@first_warning_num_days
-FIRST_WARNING_MESSAGE = '@@first_warning_message'
+FIRST_WARNING_NUM_DAYS = 83
+FIRST_WARNING_MESSAGE = 'key is due to expire in 1 week (7 days)'
 # Last email warning
-LAST_WARNING_NUM_DAYS = @@last_warning_num_days
-LAST_WARNING_MESSAGE = '@@last_warning_message'
+LAST_WARNING_NUM_DAYS = 89
+LAST_WARNING_MESSAGE = 'key is due to expire in 1 day (tomorrow)'
 
 # Max AGE days of key after which it is considered EXPIRED (deactivated)
-KEY_MAX_AGE_IN_DAYS = @@key_max_age_in_days
-KEY_EXPIRED_MESSAGE = '@@key_expired_message'
+KEY_MAX_AGE_IN_DAYS = 90
+KEY_EXPIRED_MESSAGE = 'key is now EXPIRED! Changing key to INACTIVE state'
 
-KEY_YOUNG_MESSAGE = '@@key_young_message'
+KEY_YOUNG_MESSAGE = 'key is still young'
 
 # ==========================================================
 
@@ -96,25 +95,21 @@ def send_completion_email(email_to, finished, deactivated_report):
         with tag('body'):
             with tag('p', id = 'main'):
                 text('AWS IAM Access Key Rotation Lambda Function (cron job) finished successfully at %s' % (finished))
-                for key in deactivated_report['users'].keys():
+                for key in deactivated_report.keys():
                     if key == 'USER_LIST_YOUNG_MSG':
                         with tag('p'):
-                            text('USER_LIST_YOUNG_MSG = %s' % deactivated_report['users'][key])
+                            text('USER_LIST_YOUNG_MSG = %s' % d[key])
                     elif key == 'USER_LIST_LAST_WARNING':
                         with tag('p'):
-                            text('USER_LIST_LAST_WARNING = %s' % deactivated_report['users'][key])
-                    elif key == 'USER_LIST_FIRST_WARNING':
+                            text('USER_LIST_LAST_WARNING = %s' % d[key])
+                    elif key == 'USER_LIST_YOUNG_MSG':
                         with tag('p'):
-                            text('USER_LIST_FIRST_WARNING = %s' % deactivated_report['users'][key])
+                            text('USER_LIST_YOUNG_MSG = %s' % d[key])
                     elif key == 'USER_LIST_EXPIRED':
                         with tag('p'):
-                            text('USER_LIST_EXPIRED = %s' % deactivated_report['users'][key])
-                    elif key == 'USER_LIST_INACTIVE':
-                        with tag('p'):
-                            text('USER_LIST_INACTIVE = %s' % deactivated_report['users'][key])
+                            text('USER_LIST_EXPIRED = %s' % d[key])
                     else:
-                        with tag('p'):
-                            text('Something went wrong. Contact BP')
+                        text('Something went Wrong. Contact BP')
     BODY_HTML = doc.getvalue()
     response = client.send_email(
         Source=EMAIL_FROM,
@@ -194,7 +189,6 @@ def lambda_handler(event, context):
 
             # we only need to examine the currently Active and about to expire keys
             if existing_key_status == "Inactive":
-                USER_LIST_INACTIVE.append(username)
                 key_state = 'key is already in an INACTIVE state'
                 key_info = {'accesskeyid': masked_access_key_id, 'age': age, 'state': key_state, 'changed': False}
                 user_keys.append(key_info)
@@ -213,7 +207,6 @@ def lambda_handler(event, context):
                 USER_LIST_LAST_WARNING.append(username)
             elif age >= KEY_MAX_AGE_IN_DAYS:
                 key_state = KEY_EXPIRED_MESSAGE
-                print 'Expired: %s\n' % username
                 USER_LIST_EXPIRED.append(username)
                 client.update_access_key(UserName=username, AccessKeyId=access_key_id, Status=KEY_STATE_INACTIVE)
                 # send_deactivate_email(EMAIL_TO_ADMIN, username, age, masked_access_key_id)
@@ -234,12 +227,13 @@ def lambda_handler(event, context):
     deactivated_report1 = {'reportdate': finished, 'users': users_report1}
     print 'deactivated_report1 %s ' % deactivated_report1
 
+
+
     ALL_USERS = {
         'USER_LIST_FIRST_WARNING': USER_LIST_FIRST_WARNING,
         'USER_LIST_LAST_WARNING': USER_LIST_LAST_WARNING,
         'USER_LIST_YOUNG_MSG': USER_LIST_YOUNG_MSG,
-        'USER_LIST_EXPIRED': USER_LIST_EXPIRED,
-        'USER_LIST_INACTIVE': USER_LIST_INACTIVE
+        'USER_LIST_EXPIRED': USER_LIST_EXPIRED
     }
 
     if EMAIL_SEND_COMPLETION_REPORT:
@@ -251,11 +245,11 @@ def lambda_handler(event, context):
     print 'USER_LIST_LAST_WARNING = %s' % USER_LIST_LAST_WARNING
     print 'USER_LIST_YOUNG_MSG = %s' % USER_LIST_YOUNG_MSG
     print 'USER_LIST_EXPIRED = %s' % USER_LIST_EXPIRED
-    print 'USER_LIST_INACTIVE = %s' % USER_LIST_INACTIVE
     print 'Completed (%s): %s' % (BUILD_VERSION, finished)
     print '*****************************'
     return deactivated_report1
 
+lambda_handler(0,0)
 #if __name__ == "__main__":
 #    event = 1
 #    context = 1

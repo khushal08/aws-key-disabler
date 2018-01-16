@@ -17,8 +17,12 @@ echo
 CURRENT_DIR=`pwd`
 echo CURRENT_DIR=$CURRENT_DIR
 
-cd $CURRENT_DIR/../releases
-zip -j $PACKAGE_NAME ../lambda/build/RotateAccessKey.py
+# cd $CURRENT_DIR/../releases
+cd ../lambda/build/packages/
+zip -r9 ../../../releases/$PACKAGE_NAME *
+cd ..
+zip -g ../../releases/$PACKAGE_NAME RotateAccessKey.py
+# zip -j $PACKAGE_NAME ../lambda/build/RotateAccessKey.py
 
 echo
 echo "**************************************************"
